@@ -6,6 +6,8 @@
 #include <set>
 #include <string>
 
+#include <iostream>
+
 #include "utils/testing.h"
 
 using std::set;
@@ -19,7 +21,7 @@ TEST(LockManagerA_SimpleLocking) {
   Txn* t2 = reinterpret_cast<Txn*>(2);
   Txn* t3 = reinterpret_cast<Txn*>(3);
 
-  // Txn 1 acquires read lock.
+  std::cout << "// Txn 1 acquires read lock." << std::endl;
   lm.ReadLock(t1, 101);
   ready_txns.push_back(t1);   // Txn 1 is ready.
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
@@ -29,6 +31,7 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(t1, ready_txns.at(0));
 
   // Txn 2 requests write lock. Not granted.
+  std::cout << "// Txn 2 requests write lock. Not granted." << std::endl;
   lm.WriteLock(t2, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
   EXPECT_EQ(1, owners.size());
@@ -36,6 +39,7 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(1, ready_txns.size());
 
   // Txn 3 requests read lock. Not granted.
+  std::cout << "// Txn 3 requests read lock. Not granted." << std::endl;
   lm.ReadLock(t3, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
   EXPECT_EQ(1, owners.size());
@@ -43,6 +47,7 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(1, ready_txns.size());
 
   // Txn 1 releases lock.  Txn 2 is granted write lock.
+  std::cout << "// Txn 1 releases lock.  Txn 2 is granted write lock." << std::endl;
   lm.Release(t1, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
   EXPECT_EQ(1, owners.size());
@@ -51,6 +56,7 @@ TEST(LockManagerA_SimpleLocking) {
   EXPECT_EQ(t2, ready_txns.at(1));
 
   // Txn 2 releases lock.  Txn 3 is granted read lock.
+  std::cout << "// Txn 2 releases lock.  Txn 3 is granted read lock." << std::endl;
   lm.Release(t2, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
   EXPECT_EQ(1, owners.size());
@@ -76,15 +82,24 @@ TEST(LockManagerA_LocksReleasedOutOfOrder) {
   lm.WriteLock(t2, 101);  // Txn 2 requests write lock. Not granted.
   lm.ReadLock(t3, 101);   // Txn 3 requests read lock. Not granted.
   lm.ReadLock(t4, 101);   // Txn 4 requests read lock. Not granted.
+  std::cout << "// Txn 1 acquires read lock." << std::endl;
+  std::cout << "// Txn 1 is ready." << std::endl;
+  std::cout << "// Txn 2 requests write lock. Not granted." << std::endl;
+  std::cout << "// Txn 3 requests read lock. Not granted." << std::endl;
+  std::cout << "// Txn 4 requests read lock. Not granted." << std::endl;
 
   lm.Release(t2, 101);    // Txn 2 cancels write lock request.
+  std::cout << "// Txn 2 cancels write lock request." << std::endl;
 
   // Txn 1 should now have a read lock and Txns 3 and 4 should be next in line.
+  std::cout << "// Txn 1 should now have a read lock and Txns 3 and 4 should be next in line." << std::endl;
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
   EXPECT_EQ(1, owners.size());
   EXPECT_EQ(t1, owners[0]);
 
   // Txn 1 releases lock.  Txn 3 is granted read lock.
+  std::cout << "// Txn 1 releases lock.  Txn 3 is granted read lock." << std::endl;
+
   lm.Release(t1, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
   EXPECT_EQ(1, owners.size());
@@ -93,6 +108,7 @@ TEST(LockManagerA_LocksReleasedOutOfOrder) {
   EXPECT_EQ(t3, ready_txns.at(1));
 
   // Txn 3 releases lock.  Txn 4 is granted read lock.
+  std::cout << "// Txn 3 releases lock.  Txn 4 is granted read lock." << std::endl;
   lm.Release(t3, 101);
   EXPECT_EQ(EXCLUSIVE, lm.Status(101, &owners));
   EXPECT_EQ(1, owners.size());
@@ -190,7 +206,7 @@ TEST(LockManagerB_LocksReleasedOutOfOrder) {
 int main(int argc, char** argv) {
   LockManagerA_SimpleLocking();
   LockManagerA_LocksReleasedOutOfOrder();
-  LockManagerB_SimpleLocking();
-  LockManagerB_LocksReleasedOutOfOrder();
+  // LockManagerB_SimpleLocking();
+  // LockManagerB_LocksReleasedOutOfOrder();
 }
 
